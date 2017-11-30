@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This file contains some utilities to test the the .deb/.rpm
+# This file contains some utilities to test the .deb/.rpm
 # packages and the SysV/Systemd scripts.
 
 # WARNING: This testing file must be executed as root and can
@@ -417,7 +417,7 @@ wait_for_elasticsearch_status() {
     local index=$2
 
     echo "Making sure elasticsearch is up..."
-    wget -O - --retry-connrefused --waitretry=1 --timeout=60 --tries 60 http://localhost:9200/_cluster/health || {
+    wget -O - --retry-connrefused --waitretry=1 --timeout=120 --tries 120 http://localhost:9200/_cluster/health || {
           echo "Looks like elasticsearch never started. Here is its log:"
           if [ -e "$ESLOG/elasticsearch.log" ]; then
               cat "$ESLOG/elasticsearch.log"

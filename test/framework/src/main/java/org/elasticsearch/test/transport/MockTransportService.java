@@ -20,6 +20,7 @@
 package org.elasticsearch.test.transport;
 
 import com.carrotsearch.randomizedtesting.SysGlobals;
+
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterModule;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -71,6 +72,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -117,7 +119,7 @@ public final class MockTransportService extends TransportService {
         return new MockTransportService(settings, transport, threadPool, TransportService.NOOP_TRANSPORT_INTERCEPTOR,
             boundAddress ->
                 new DiscoveryNode(Node.NODE_NAME_SETTING.get(settings), UUIDs.randomBase64UUID(), boundAddress.publishAddress(),
-                    Node.NODE_ATTRIBUTES.get(settings).getAsMap(), DiscoveryNode.getRolesFromSettings(settings), version),
+                    Node.NODE_ATTRIBUTES.getAsMap(settings), DiscoveryNode.getRolesFromSettings(settings), version),
             clusterSettings);
     }
 
@@ -126,7 +128,7 @@ public final class MockTransportService extends TransportService {
     /**
      * Build the service.
      *
-     * @param clusterSettings if non null the the {@linkplain TransportService} will register with the {@link ClusterSettings} for settings
+     * @param clusterSettings if non null the {@linkplain TransportService} will register with the {@link ClusterSettings} for settings
      *                        updates for {@link #TRACE_LOG_EXCLUDE_SETTING} and {@link #TRACE_LOG_INCLUDE_SETTING}.
      */
     public MockTransportService(Settings settings, Transport transport, ThreadPool threadPool, TransportInterceptor interceptor,
@@ -139,7 +141,7 @@ public final class MockTransportService extends TransportService {
     /**
      * Build the service.
      *
-     * @param clusterSettings if non null the the {@linkplain TransportService} will register with the {@link ClusterSettings} for settings
+     * @param clusterSettings if non null the {@linkplain TransportService} will register with the {@link ClusterSettings} for settings
      *                        updates for {@link #TRACE_LOG_EXCLUDE_SETTING} and {@link #TRACE_LOG_INCLUDE_SETTING}.
      */
     public MockTransportService(Settings settings, Transport transport, ThreadPool threadPool, TransportInterceptor interceptor,
@@ -164,6 +166,17 @@ public final class MockTransportService extends TransportService {
         } else {
             return super.createTaskManager();
         }
+    }
+
+    private volatile String executorName;
+
+    public void setExecutorName(final String executorName) {
+        this.executorName = executorName;
+    }
+
+    @Override
+    protected ExecutorService getExecutorService() {
+        return executorName == null ? super.getExecutorService() : getThreadPool().executor(executorName);
     }
 
     /**
@@ -345,7 +358,7 @@ public final class MockTransportService extends TransportService {
         final long startTime = System.currentTimeMillis();
 
         addDelegate(transportAddress, new ClearableTransport(original) {
-            private final Queue<Runnable> requestsToSendWhenCleared = new LinkedBlockingDeque<Runnable>();
+            private final Queue<Runnable> requestsToSendWhenCleared = new LinkedBlockingDeque<>();
             private boolean cleared = false;
 
             TimeValue getDelay() {

@@ -24,6 +24,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
+import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.fielddata.IndexFieldData.XFieldComparatorSource;
@@ -31,11 +32,11 @@ import org.elasticsearch.index.fielddata.IndexFieldData.XFieldComparatorSource.N
 import org.elasticsearch.index.fielddata.fieldcomparator.BytesRefFieldComparatorSource;
 import org.elasticsearch.index.fielddata.fieldcomparator.DoubleValuesComparatorSource;
 import org.elasticsearch.index.mapper.TypeFieldMapper;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.index.query.MatchNoneQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryRewriteContext;
+import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
@@ -245,7 +246,7 @@ public class ScriptSortBuilderTests extends AbstractSortTestCase<ScriptSortBuild
         parser.nextToken();
         parser.nextToken();
 
-        Exception e = expectThrows(IllegalArgumentException.class, () -> ScriptSortBuilder.fromXContent(parser, null));
+        Exception e = expectThrows(ParsingException.class, () -> ScriptSortBuilder.fromXContent(parser, null));
         assertEquals("[_script] script doesn't support values of type: START_ARRAY", e.getMessage());
     }
 
@@ -360,7 +361,7 @@ public class ScriptSortBuilderTests extends AbstractSortTestCase<ScriptSortBuild
      }
 
     /**
-     * Test the the nested Filter gets rewritten
+     * Test the nested Filter gets rewritten
      */
     public void testNestedRewrites() throws IOException {
         ScriptSortBuilder sortBuilder = new ScriptSortBuilder(mockScript("something"), ScriptSortType.STRING);
@@ -377,7 +378,7 @@ public class ScriptSortBuilderTests extends AbstractSortTestCase<ScriptSortBuild
     }
 
     /**
-     * Test the the nested sort gets rewritten
+     * Test the nested sort gets rewritten
      */
     public void testNestedSortRewrites() throws IOException {
         ScriptSortBuilder sortBuilder = new ScriptSortBuilder(mockScript("something"), ScriptSortType.STRING);

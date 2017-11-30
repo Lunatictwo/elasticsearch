@@ -19,7 +19,6 @@
 
 package org.elasticsearch.search.query;
 
-import org.apache.lucene.util.LuceneTestCase;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -52,7 +51,6 @@ import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
 import static org.elasticsearch.test.StreamsUtils.copyToStringFromClasspath;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoSearchHits;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchHits;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -69,10 +67,6 @@ public class QueryStringIT extends ESIntegTestCase {
         String indexBody = copyToStringFromClasspath("/org/elasticsearch/search/query/all-query-index.json");
         prepareCreate("test").setSource(indexBody, XContentType.JSON).get();
         ensureGreen("test");
-    }
-
-    private QueryStringQueryBuilder lenientQuery(String queryText) {
-        return queryStringQuery(queryText).lenient(true);
     }
 
     public void testBasicAllQuery() throws Exception {
@@ -177,8 +171,6 @@ public class QueryStringIT extends ESIntegTestCase {
         assertHits(resp.getHits(), "1");
         resp = client().prepareSearch("test").setQuery(queryStringQuery("1.5")).get();
         assertHits(resp.getHits(), "1");
-        resp = client().prepareSearch("test").setQuery(queryStringQuery("12.23")).get();
-        assertHits(resp.getHits(), "1");
         resp = client().prepareSearch("test").setQuery(queryStringQuery("127.0.0.1")).get();
         assertHits(resp.getHits(), "1");
         // binary doesn't match
@@ -272,10 +264,10 @@ public class QueryStringIT extends ESIntegTestCase {
             Settings.builder()
                 .put(indexSettings())
                 .put("index.analysis.filter.graphsyns.type", "synonym_graph")
-                .putArray("index.analysis.filter.graphsyns.synonyms", "wtf, what the fudge", "foo, bar baz")
+                .putList("index.analysis.filter.graphsyns.synonyms", "wtf, what the fudge", "foo, bar baz")
                 .put("index.analysis.analyzer.lower_graphsyns.type", "custom")
                 .put("index.analysis.analyzer.lower_graphsyns.tokenizer", "standard")
-                .putArray("index.analysis.analyzer.lower_graphsyns.filter", "lowercase", "graphsyns")
+                .putList("index.analysis.analyzer.lower_graphsyns.filter", "lowercase", "graphsyns")
         );
 
         XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(index).startObject("properties")
